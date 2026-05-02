@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Наши корты{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Наши теннисные корты</h1>
+        <p class="text-muted">Выберите корт для бронирования</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for court in courts %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="row g-0">
+                <div class="col-md-4"
+                    style="background: linear-gradient(45deg, #2c8c3f, #3aa855); display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-tennis-ball display-3 text-white"></i>
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ court.name }}</h5>
+                        <p class="card-text">
+                            <span
+                                class="badge bg-{% if court.court_type == 'hard' %}danger{% elif court.court_type == 'clay' %}warning{% else %}success{% endif %}">
+                                {{ court.get_court_type_display }}
+                            </span>
+                        </p>
+                        <p class="card-text">{{ court.description|truncatechars:150 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="h5 mb-0">{{ court.price_per_hour }} ₽/час</span>
+                            <div>
+                                <a href="{% url 'schedule' %}?court={{ court.id }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-calendar-check"></i> Забронировать
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> Корты пока не добавлены. Загляните позже!
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

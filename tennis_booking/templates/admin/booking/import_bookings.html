@@ -1,0 +1,44 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main" style="padding: 20px;">
+    <h1>Импорт бронирований из CSV</h1>
+    
+    <div style="background: #f8f9fa; border: 1px solid #ddd; padding: 20px; margin: 20px 0;">
+        <h3>Формат CSV файла:</h3>
+        <p>Колонки (через запятую):</p>
+        <ol>
+            <li>ID корта</li>
+            <li>Пользователь (username или email)</li>
+            <li>Дата (ГГГГ-ММ-ДД)</li>
+            <li>Время (ЧЧ:ММ)</li>
+            <li>Длительность (часы)</li>
+            <li>Статус (paid/pending/cancelled)</li>
+        </ol>
+        
+        <p><strong>Пример:</strong></p>
+        <pre style="background: #333; color: #fff; padding: 10px;">
+1,admin,2026-02-17,09:00,1.5,paid
+1,user@mail.com,2026-02-17,11:00,1.0,pending
+        </pre>
+    </div>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label for="csv_file"><strong>Выберите CSV файл:</strong></label><br>
+            <input type="file" id="csv_file" name="csv_file" accept=".csv" required style="margin-top: 10px;">
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <button type="submit" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                Начать импорт
+            </button>
+            <a href="{% url 'admin:booking_booking_changelist' %}" style="background: #6c757d; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-left: 10px;">
+                Отмена
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

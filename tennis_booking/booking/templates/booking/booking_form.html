@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Бронирование корта{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-calendar-check"></i> Бронирование корта</h4>
+            </div>
+            <div class="card-body">
+                <div class="booking-info mb-4 p-3 bg-light rounded">
+                    <h5>Детали бронирования:</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Корт:</strong> {{ court.name }} (№{{ court.number }})</p>
+                            <p><strong>Тип:</strong> {% if court.court_type == 'hard' %}Хард{% elif court.court_type == 'clay' %}Грунт{% else %}Трава{% endif %}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Дата:</strong> {{ booking_date }}</p>
+                            <p><strong>Время начала:</strong> {{ start_time }}</p>
+                            <p><strong>Цена за час:</strong> {{ price_per_hour }} ₽</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <input type="hidden" name="court" value="{{ court.id }}">
+                    <input type="hidden" name="date" value="{{ booking_date }}">
+                    <input type="hidden" name="start_time" value="{{ start_time }}">
+                    
+                    <div class="mb-4">
+                        <h5 class="mb-3">Выберите длительность игры:</h5>
+                        <p class="text-muted">Можно выбрать любое количество получасовых интервалов</p>
+                        
+                        <div class="row">
+                            {% for option in duration_options %}
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check card h-100 duration-option">
+                                    <div class="card-body text-center">
+                                        <input class="form-check-input" type="radio" name="duration" 
+                                               id="duration{{ forloop.counter }}" value="{{ option.value }}" 
+                                               {% if forloop.first %}checked{% endif %}>
+                                        <label class="form-check-label w-100" for="duration{{ forloop.counter }}">
+                                            <h6 class="mb-2">{{ option.display }}</h6>
+                                            <div class="price-display">
+                                                <span class="text-muted">{{ price_per_hour }} ₽ × {{ option.value }} ч =</span><br>
+                                                <strong class="text-primary fs-5">{{ option.price|floatformat:"0" }} ₽</strong>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h5 class="mb-3">Способ оплаты:</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="payment_method" 
+                                                   id="card_transfer" value="card_transfer" checked>
+                                            <label class="form-check-label" for="card_transfer">
+                                                <strong><i class="bi bi-credit-card"></i> Перевод на карту</strong><br>
+                                                <small class="text-muted">
+                                                    Реквизиты для перевода:<br>
+                                                    Сбербанк: 0000 0000 0000 0000<br>
+                                                    Получатель: Теннисный клуб
+                                                </small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="payment_method" 
+                                                   id="online" value="online">
+                                            <label class="form-check-label" for="online">
+                                                <strong><i class="bi bi-globe"></i> Онлайн оплата</strong><br>
+                                                <small class="text-muted">Безопасная оплата банковской картой через платежный шлюз</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Дополнительные пожелания (необязательно):</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Например: нужны теннисные ракетки, мячи, тренер"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Важно:</strong> Бронирование подтверждается только после оплаты. 
+                        Отмена возможна за 2 часа до начала игры.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg py-3">
+                            <i class="bi bi-check-circle"></i> Подтвердить бронирование
+                        </button>
+                        <a href="{% url 'schedule' %}?date={{ booking_date }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Вернуться к расписанию
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.duration-option {
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.duration-option:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.form-check-input:checked + .card-body {
+    background-color: rgba(44, 140, 63, 0.1);
+    border-color: #2c8c3f;
+}
+
+.form-check-input {
+    position: absolute;
+    opacity: 0;
+}
+
+.form-check-label {
+    cursor: pointer;
+    width: 100%;
+}
+
+.price-display {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.card[style*="border-color: #2c8c3f"] {
+    border-color: #2c8c3f !important;
+}
+
+.btn-primary {
+    background-color: #2c8c3f;
+    border-color: #2c8c3f;
+}
+
+.btn-primary:hover {
+    background-color: #247a36;
+    border-color: #247a36;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Подсветка выбранного варианта длительности
+    const durationOptions = document.querySelectorAll('.duration-option');
+    const durationInputs = document.querySelectorAll('input[name="duration"]');
+    
+    function updateSelection() {
+        durationOptions.forEach(option => {
+            option.style.borderColor = '';
+            option.style.backgroundColor = '';
+        });
+        
+        const checkedInput = document.querySelector('input[name="duration"]:checked');
+        if (checkedInput) {
+            const optionCard = checkedInput.closest('.duration-option');
+            if (optionCard) {
+                optionCard.style.borderColor = '#2c8c3f';
+                optionCard.style.backgroundColor = 'rgba(44, 140, 63, 0.1)';
+            }
+        }
+    }
+    
+    durationInputs.forEach(input => {
+        input.addEventListener('change', updateSelection);
+    });
+    
+    // Инициализация при загрузке
+    updateSelection();
+    
+    // Клик по всей карточке выбирает опцию
+    durationOptions.forEach(option => {
+        option.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'INPUT') {
+                const input = this.querySelector('input[type="radio"]');
+                if (input) {
+                    input.checked = true;
+                    updateSelection();
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

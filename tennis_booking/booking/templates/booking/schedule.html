@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+
+{% block title %}Расписание - Корт {{ court.number }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Заголовок -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Расписание теннисных кортов</h1>
+            <p class="lead">
+                Текущая неделя: 
+                <strong>{{ week_start|date:"d" }} - {{ week_end|date:"d" }} {{ week_end|date:"F" }} {{ week_end|date:"Y" }}</strong>
+                <span class="badge bg-primary ms-2">Неделя {{ week_number }}</span>
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <!-- Навигация по неделям (только для админов) -->
+            {% if user_is_staff %}
+            <div class="btn-group mb-2" role="group">
+                <a href="{% url 'schedule' %}?court={{ court.id }}&date={{ prev_week|date:'Y-m-d' }}" 
+                   class="btn btn-outline-secondary btn-sm">
+                    ← Пред. неделя
+                </a>
+                <a href="{% url 'schedule' %}?court={{ court.id }}" class="btn btn-outline-primary btn-sm">
+                    Текущая неделя
+                </a>
+                <a href="{% url 'schedule' %}?court={{ court.id }}&date={{ next_week|date:'Y-m-d' }}" 
+                   class="btn btn-outline-secondary btn-sm">
+                    След. неделя →
+                </a>
+            </div>
+            <div class="text-muted">
+                <small><i class="bi bi-shield-lock"></i> Режим администратора</small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Выбор корта -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Выберите корт для просмотра:</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for c in all_courts %}
+                <div class="col-md-3 col-6 mb-2">
+                    <a href="{% url 'schedule' %}?court={{ c.id }}" 
+                       class="btn {% if c.id == court.id %}btn-primary{% else %}btn-outline-primary{% endif %} w-100">
+                        <div><strong>Корт {{ c.number }}</strong></div>
+                        <small>{{ c.name|truncatechars:15 }}</small>
+                        <div class="small">
+                            {% if c.location == 'indoor' %}
+                            <span class="badge bg-info">Крытый</span>
+                            {% else %}
+                            <span class="badge bg-success">Уличный</span>
+                            {% endif %}
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Информация о текущем корте -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4>Корт {{ court.number }}: {{ court.name }}</h4>
+                    <p class="mb-1"><strong>Покрытие:</strong> {{ court.get_court_type_display }}</p>
+                    <p class="mb-1"><strong>Тип:</strong> {{ court.get_location_display }}</p>
+                    <p class="mb-1"><strong>Цены:</strong> 
+                        <span class="badge bg-light text-dark">{{ court.price_weekday }}₽/ч (будни)</span>
+                        <span class="badge bg-light text-dark">{{ court.price_weekend }}₽/ч (выходные)</span>
+                    </p>
+                    {% if court.description %}
+                    <p class="mb-0"><small>{{ court.description }}</small></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5>Неделя с {{ week_start|date:"d.m" }} по {{ week_end|date:"d.m.Y" }}</h5>
+                    <div class="d-flex justify-content-between">
+                        {% for day in week_dates %}
+                        <div class="text-center">
+                            <div class="small text-muted">{{ day.weekday_short }}</div>
+                            <div class="fw-bold {% if day.is_today %}text-primary{% endif %}">{{ day.day }}</div>
+                            {% if day.is_today %}
+                            <div class="badge bg-primary">Сегодня</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Информационное сообщение для пользователей -->
+    {% if not user_is_staff %}
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle"></i>
+        Вы просматриваете расписание на <strong>текущую неделю</strong>. 
+        Бронирование доступно только на текущие и будущие даты этой недели.
+        <div class="mt-1">
+            <i class="bi bi-clock"></i> <strong>Внимание!</strong> Прошедшее время сегодня отмечено как "Прошло".
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Таблица расписания на всю неделю -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Расписание на неделю для корта {{ court.number }}</h5>
+            <small class="text-muted">Минимальное бронирование - 30 минут</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 100px;" class="text-center">Время</th>
+                            {% for day in week_dates %}
+                            <th class="text-center {% if day.is_today %}bg-primary text-white{% endif %}">
+                                <div>{{ day.weekday_short }}</div>
+                                <div class="fw-bold">{{ day.day }} {{ day.month }}</div>
+                                {% if day.is_today %}
+                                <div class="badge {% if day.is_today %}bg-light text-primary{% else %}bg-primary{% endif %}">
+                                    Сегодня
+                                </div>
+                                {% endif %}
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for time_slot in time_slots %}
+                        <tr>
+                            <td class="fw-bold text-center bg-light">
+                                {{ time_slot }}
+                                <!-- Показываем метку "Сейчас" если это текущее время -->
+                                {% for day in week_dates %}
+                                    {% if day.is_today %}
+                                        {% now "H:i" as now_time %}
+                                        {% if time_slot == now_time %}
+                                        <div class="badge bg-warning text-dark mt-1">Сейчас</div>
+                                        {% endif %}
+                                    {% endif %}
+                                {% endfor %}
+                            </td>
+                            
+                            {% for day in week_dates %}
+                            <td class="text-center align-middle p-2">
+                                {% with slot_date=day.date_obj|date:"Y-m-d" %}
+                                {% with slot_key=slot_date|add:"_"|add:time_slot %}
+                                
+                                {% if slot_key in is_booked %}
+                                    <!-- Занято -->
+                                    <div class="d-flex flex-column align-items-center">
+                                        <span class="badge bg-danger mb-1">
+                                            <i class="bi bi-x-circle"></i> Занято
+                                        </span>
+                                        <small class="text-muted">Забронировано</small>
+                                    </div>
+                                    
+                                {% else %}
+                                    <!-- Проверяем доступность -->
+                                    {% if day.date_obj > today and court.is_active %}
+                                        <!-- Будущая дата и корт активен - свободно -->
+                                        <a href="{% url 'create_booking' %}?court={{ court.id }}&date={{ slot_date }}&time={{ time_slot }}" 
+                                           class="btn btn-success w-100 d-flex flex-column align-items-center py-2">
+                                            <i class="bi bi-check-circle fs-5"></i>
+                                            <span>Свободно</span>
+                                            <small class="text-white">Забронировать</small>
+                                        </a>
+                                        
+                                    {% elif day.date_obj == today and court.is_active %}
+                                        <!-- Сегодня - проверяем время -->
+                                        {% now "H:i" as now_time %}
+                                        {% if time_slot <= now_time %}
+                                            <!-- Время уже прошло -->
+                                            <div class="d-flex flex-column align-items-center">
+                                                <span class="badge bg-secondary py-2">
+                                                    <i class="bi bi-clock-history"></i> Прошло
+                                                </span>
+                                                <small class="text-muted mt-1">Время истекло</small>
+                                            </div>
+                                        {% else %}
+                                            <!-- Время еще впереди - можно бронировать -->
+                                            <a href="{% url 'create_booking' %}?court={{ court.id }}&date={{ slot_date }}&time={{ time_slot }}" 
+                                               class="btn btn-success w-100 d-flex flex-column align-items-center py-2">
+                                                <i class="bi bi-check-circle fs-5"></i>
+                                                <span>Свободно</span>
+                                                <small class="text-white">Забронировать</small>
+                                            </a>
+                                        {% endif %}
+                                        
+                                    {% else %}
+                                        <!-- Недоступно по другим причинам -->
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="badge 
+                                                {% if day.date_obj < today %}bg-secondary
+                                                {% elif not court.is_active %}bg-warning text-dark
+                                                {% else %}bg-light text-dark border{% endif %} py-2">
+                                                
+                                                {% if day.date_obj < today %}
+                                                    <i class="bi bi-clock-history"></i> Прошло
+                                                {% elif not court.is_active %}
+                                                    <i class="bi bi-slash-circle"></i> Не активен
+                                                {% else %}
+                                                    <i class="bi bi-dash-circle"></i> Недоступно
+                                                {% endif %}
+                                            </span>
+                                            <small class="text-muted mt-1">
+                                                {% if day.date_obj < today %}
+                                                    Дата прошла
+                                                {% elif not court.is_active %}
+                                                    Корт закрыт
+                                                {% else %}
+                                                    Бронь недоступна
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                    {% endif %}
+                                    
+                                {% endif %}
+                                
+                                {% endwith %}
+                                {% endwith %}
+                            </td>
+                            {% endfor %}
+                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Легенда -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">Обозначения в таблице</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <button class="btn btn-success w-100 mb-1 py-2" disabled>
+                                <i class="bi bi-check-circle"></i> Свободно
+                            </button>
+                            <small class="text-muted">Нажмите чтобы забронировать</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <span class="badge bg-danger w-100 py-2 mb-1">
+                                <i class="bi bi-x-circle"></i> Занято
+                            </span>
+                            <small class="text-muted">Уже забронировано</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <span class="badge bg-secondary w-100 py-2 mb-1">
+                                <i class="bi bi-clock-history"></i> Прошло
+                            </span>
+                            <small class="text-muted">Время уже прошло</small>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <span class="badge bg-warning text-dark w-100 py-2 mb-1">
+                                <i class="bi bi-slash-circle"></i> Не активен
+                            </span>
+                            <small class="text-muted">Корт не работает</small>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <span class="badge bg-primary w-100 py-2 mb-1">
+                                <i class="bi bi-calendar-day"></i> Сегодня
+                            </span>
+                            <small class="text-muted">Текущий день</small>
+                        </div>
+                        <div class="col-md-6">
+                            <span class="badge bg-warning text-dark w-100 py-2 mb-1">
+                                <i class="bi bi-clock"></i> Сейчас
+                            </span>
+                            <small class="text-muted">Текущее время</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Информация</div>
+                <div class="card-body">
+                    <p><small><i class="bi bi-calendar-week"></i> Вы просматриваете текущую неделю</small></p>
+                    <p><small><i class="bi bi-tennis-ball"></i> Выбран корт {{ court.number }}</small></p>
+                    <p><small><i class="bi bi-cash"></i> Минимальное бронирование - 30 минут</small></p>
+                    <p><small><i class="bi bi-clock"></i> Текущее время: {% now "H:i" %}</small></p>
+                    {% if not user_is_staff %}
+                    <p class="text-muted mb-0">
+                        <small>
+                            <i class="bi bi-lock"></i> Только администраторы могут смотреть другие недели
+                        </small>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table th {
+    min-width: 120px;
+}
+
+.table td {
+    min-height: 100px;
+    vertical-align: middle !important;
+}
+
+.btn, .badge {
+    transition: all 0.2s;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.02);
+}
+
+.badge {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, #218838 0%, #1ba87e 100%);
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+</style>
+
+<script>
+// Плавная прокрутка при нажатии на кнопку бронирования
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('a[href*="create_booking"]').forEach(link => {
+        link.addEventListener('click', function(e) {
+            setTimeout(() => {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            }, 100);
+        });
+    });
+    
+    // Автоматическое обновление времени каждую минуту
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                          now.getMinutes().toString().padStart(2, '0');
+        
+        // Обновляем все элементы с текущим временем
+        document.querySelectorAll('.current-time').forEach(el => {
+            el.textContent = timeString;
+        });
+    }
+    
+    // Обновляем каждую минуту
+    setInterval(updateTime, 60000);
+    updateTime(); // Первоначальное обновление
+});
+</script>
+{% endblock %}

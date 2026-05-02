@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Импорт расписания из CSV</h1>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div>
+            <label for="csv_file">Выберите CSV файл:</label>
+            <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
+        </div>
+        <div style="margin-top: 20px;">
+            <button type="submit">Загрузить</button>
+            <a href="{% url 'admin:booking_timeslot_changelist' %}">Отмена</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

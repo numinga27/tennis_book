@@ -1,0 +1,5 @@
+court_id,user,date,time,duration,status,payment_method,notes
+1,admin,2026-02-17,09:00,1.5,paid,online,
+1,admin,2026-02-17,11:00,1.0,pending,card_transfer,Нужны ракетки
+2,admin,2026-02-18,15:00,2.0,paid,online,
+1,user,2026-02-19,10:00,1.0,paid,card_transfer,

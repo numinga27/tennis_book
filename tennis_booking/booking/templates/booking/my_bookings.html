@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Мои бронирования{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Мои бронирования</h1>
+        <p class="text-muted">Здесь вы можете просмотреть все ваши бронирования</p>
+    </div>
+    <div class="col-auto">
+        <a href="{% url 'schedule' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Новое бронирование
+        </a>
+    </div>
+</div>
+
+{% if bookings %}
+<div class="row">
+    {% for booking in bookings %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Корт {{ booking.court.number }}</h5>
+                <span class="badge 
+                    {% if booking.payment_status == 'paid' %}bg-success
+                    {% elif booking.payment_status == 'pending' %}bg-warning
+                    {% elif booking.payment_status == 'cancelled' %}bg-danger
+                    {% else %}bg-secondary{% endif %}">
+                    {{ booking.get_payment_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Дата:</strong></p>
+                        <p>{{ booking.date|date:"d.m.Y" }}</p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Время:</strong></p>
+                        <p>{{ booking.start_time|time:"H:i" }}</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Длительность:</strong></p>
+                        <p>
+                            {% if booking.duration == 0.5 %}30 минут
+                            {% elif booking.duration == 1 %}1 час
+                            {% elif booking.duration == 1.5 %}1.5 часа
+                            {% elif booking.duration == 2 %}2 часа
+                            {% elif booking.duration == 2.5 %}2.5 часа
+                            {% elif booking.duration == 3 %}3 часа
+                            {% elif booking.duration == 3.5 %}3.5 часа
+                            {% elif booking.duration == 4 %}4 часа
+                            {% else %}{{ booking.duration }} часов{% endif %}
+                        </p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Стоимость:</strong></p>
+                        <p>{{ booking.total_price }} ₽</p>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Способ оплаты:</strong></p>
+                        <p>{{ booking.get_payment_method_display }}</p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Создано:</strong></p>
+                        <p>{{ booking.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+                {% if booking.notes %}
+                <p class="mb-1"><strong>Примечания:</strong></p>
+                <p class="text-muted">{{ booking.notes }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    {% if booking.payment_status == 'pending' %}
+                    <div>
+                        <a href="{% url 'payment:process_payment' booking.id %}" class="btn btn-sm btn-success">
+                            <i class="bi bi-credit-card"></i> Оплатить
+                        </a>
+                        <form method="post" action="{% url 'cancel_booking' booking.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger ms-1" 
+                                    onclick="return confirm('Вы уверены, что хотите отменить это бронирование?')">
+                                <i class="bi bi-x-circle"></i> Отменить
+                            </button>
+                        </form>
+                    </div>
+                    {% else %}
+                    <small class="text-muted">Бронирование {{ booking.get_payment_status_display|lower }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="bi bi-calendar-x display-1 text-muted"></i>
+    <h3 class="mt-4">У вас еще нет бронирований</h3>
+    <p class="text-muted">Забронируйте свой первый теннисный корт прямо сейчас!</p>
+    <a href="{% url 'schedule' %}" class="btn btn-primary btn-lg mt-3">
+        <i class="bi bi-calendar-plus"></i> Посмотреть расписание
+    </a>
+</div>
+{% endif %}
+{% endblock %}
