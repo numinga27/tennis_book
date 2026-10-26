@@ -1,0 +1,23 @@
+# New local files; already tracked upstream data is preserved, not removed.
+.codex-local/
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.sqlite3
+db.json
+node_modules/
+dist/
+build/
+coverage/
+.pytest_cache/
+*.log
+.private/
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
